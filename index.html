@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Royale Deck Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <header class="text-center py-4 mb-4">
+            <h1 class="display-4 fw-bold text-gradient">
+                <i class="fas fa-crown me-2"></i>
+                Clash Royale Deck Coach
+            </h1>
+            <p class="lead text-muted">Your personal AI coach for deck building and strategy</p>
+            <div class="coach-avatar mx-auto mb-3">
+                <i class="fas fa-user-tie fa-3x text-primary"></i>
+            </div>
+        </header>
+
+        <!-- Player Tag Input Section -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-lg border-0 input-card">
+                    <div class="card-body p-4">
+                        <h3 class="card-title text-center mb-3">
+                            <i class="fas fa-user me-2"></i>
+                            Enter Your Player Tag
+                        </h3>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="fas fa-hashtag"></i>
+                            </span>
+                            <input type="text" id="playerTagInput" class="form-control form-control-lg" 
+                                   placeholder="Enter player tag (e.g., #2PP)" maxlength="15">
+                        </div>
+                        <div class="d-grid">
+                            <button id="getProfileBtn" class="btn btn-primary btn-lg">
+                                <i class="fas fa-download me-2"></i>
+                                Get My Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center mb-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Fetching your profile data...</p>
+        </div>
+
+        <!-- Error Messages -->
+        <div id="errorAlert" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span id="errorMessage"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Player Profile Section -->
+        <div id="playerProfile" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card shadow-lg border-0 profile-card">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center">
+                                <div class="player-avatar mb-3">
+                                    <i class="fas fa-user-circle fa-5x text-primary"></i>
+                                </div>
+                                <h3 id="playerName" class="fw-bold"></h3>
+                                <p id="playerTag" class="text-muted"></p>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-sm-6 mb-3">
+                                        <div class="stat-box">
+                                            <i class="fas fa-trophy text-warning"></i>
+                                            <div class="ms-2">
+                                                <div class="stat-label">Current Trophies</div>
+                                                <div id="currentTrophies" class="stat-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <div class="stat-box">
+                                            <i class="fas fa-medal text-gold"></i>
+                                            <div class="ms-2">
+                                                <div class="stat-label">Best Trophies</div>
+                                                <div id="bestTrophies" class="stat-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <div class="stat-box">
+                                            <i class="fas fa-star text-info"></i>
+                                            <div class="ms-2">
+                                                <div class="stat-label">Experience Level</div>
+                                                <div id="expLevel" class="stat-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <div class="stat-box">
+                                            <i class="fas fa-cards-blank text-success"></i>
+                                            <div class="ms-2">
+                                                <div class="stat-label">Total Cards</div>
+                                                <div id="totalCards" class="stat-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Trophy Range Warning -->
+                        <div id="trophyWarning" class="alert alert-warning mt-3" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="trophyWarningText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Playstyle Assessment -->
+        <div id="playstyleAssessment" class="row justify-content-center mb-4" style="display: none;">
+            <div class="col-md-8">
+                <div class="card shadow-lg border-0 coach-card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-clipboard-question me-2"></i>
+                            Playstyle Assessment
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted mb-4">Let me understand your playstyle to recommend the perfect deck for you!</p>
+                        
+                        <!-- Question 1: Playstyle Preference -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">1. What's your preferred playstyle?</h6>
+                            <div class="row g-2">
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="playstyle" id="control" value="control">
+                                    <label class="btn btn-outline-primary w-100" for="control">
+                                        <i class="fas fa-shield-alt d-block mb-1"></i>
+                                        Control
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="playstyle" id="beatdown" value="beatdown">
+                                    <label class="btn btn-outline-primary w-100" for="beatdown">
+                                        <i class="fas fa-fist-raised d-block mb-1"></i>
+                                        Beatdown
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="playstyle" id="cycle" value="cycle">
+                                    <label class="btn btn-outline-primary w-100" for="cycle">
+                                        <i class="fas fa-sync-alt d-block mb-1"></i>
+                                        Cycle
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="playstyle" id="siege" value="siege">
+                                    <label class="btn btn-outline-primary w-100" for="siege">
+                                        <i class="fas fa-chess-rook d-block mb-1"></i>
+                                        Siege
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Question 2: Card Type Preference -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">2. Which card types do you enjoy most?</h6>
+                            <div class="row g-2">
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="cardType" id="spells" value="spells">
+                                    <label class="btn btn-outline-success w-100" for="spells">
+                                        <i class="fas fa-magic d-block mb-1"></i>
+                                        Spells
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="cardType" id="winConditions" value="winConditions">
+                                    <label class="btn btn-outline-success w-100" for="winConditions">
+                                        <i class="fas fa-crown d-block mb-1"></i>
+                                        Win Conditions
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="cardType" id="buildings" value="buildings">
+                                    <label class="btn btn-outline-success w-100" for="buildings">
+                                        <i class="fas fa-home d-block mb-1"></i>
+                                        Buildings
+                                    </label>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <input type="radio" class="btn-check" name="cardType" id="support" value="support">
+                                    <label class="btn btn-outline-success w-100" for="support">
+                                        <i class="fas fa-users d-block mb-1"></i>
+                                        Support
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Question 3: Disliked Cards -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">3. Any cards you prefer to avoid?</h6>
+                            <input type="text" id="dislikedCards" class="form-control" 
+                                   placeholder="e.g., Golem, X-Bow, Sparky (optional)">
+                            <small class="text-muted">Leave blank if no preferences</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button id="getCoachingBtn" class="btn btn-primary btn-lg">
+                                <i class="fas fa-magic me-2"></i>
+                                Get My Personal Deck Coach!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="actionButtons" class="row justify-content-center mb-4" style="display: none;">
+            <div class="col-md-8">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button id="suggestDeckBtn" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Get Deck Coaching
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="upgradeCardBtn" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-arrow-up me-2"></i>
+                            Upgrade Strategy
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="playingTipsBtn" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-gamepad me-2"></i>
+                            Playing Tips
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deck Suggestion Section -->
+        <div id="deckSuggestion" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card shadow-lg border-0 deck-card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-magic me-2"></i>
+                            Your Personal Deck Recommendation
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Coach Analysis -->
+                        <div id="coachAnalysis" class="alert alert-info mb-4">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-user-tie me-2"></i>Coach Analysis
+                            </h6>
+                            <p id="coachRecommendation" class="mb-0"></p>
+                        </div>
+                        
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-6">
+                                <h5 id="deckName" class="fw-bold"></h5>
+                                <p id="deckDescription" class="text-muted mb-0"></p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <div class="deck-stats">
+                                    <span class="badge bg-primary me-2">
+                                        <i class="fas fa-percentage me-1"></i>
+                                        Win Rate: <span id="deckWinRate"></span>%
+                                    </span>
+                                    <span class="badge bg-info me-2">
+                                        <i class="fas fa-star me-1"></i>
+                                        Compatibility: <span id="deckCompatibility"></span>%
+                                    </span>
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-heart me-1"></i>
+                                        Style Match: <span id="styleMatch"></span>%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="deck-cards-grid" id="deckCards">
+                            <!-- Deck cards will be populated here -->
+                        </div>
+                        
+                        <div id="deckWarnings" class="mt-3">
+                            <!-- Warnings about under-leveled cards will appear here -->
+                        </div>
+                        
+                        <!-- Why This Deck Section -->
+                        <div id="whyThisDeck" class="mt-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-lightbulb me-2"></i>Why This Deck Works For You
+                            </h6>
+                            <div id="deckExplanation" class="text-muted">
+                                <!-- Deck explanation will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Playing Tips Section -->
+        <div id="playingTips" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card shadow-lg border-0 tips-card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-gamepad me-2"></i>
+                            Playing Tips & Strategy
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="playingTipsContent">
+                            <!-- Playing tips will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upgrade Suggestions Section -->
+        <div id="upgradeSuggestion" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card shadow-lg border-0 upgrade-card">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0">
+                            <i class="fas fa-arrow-up me-2"></i>
+                            Card Upgrade Recommendations
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="upgradeList">
+                            <!-- Upgrade recommendations will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Deck Section -->
+        <div id="currentDeck" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card shadow-lg border-0 current-deck-card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-layer-group me-2"></i>
+                            Your Current Deck
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="deck-cards-grid" id="currentDeckCards">
+                            <!-- Current deck cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 mt-5 border-top">
+        <p class="text-muted">
+            <i class="fas fa-code me-1"></i>
+            Clash Royale Deck Analyzer - Optimize your gameplay with data-driven insights
+        </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
